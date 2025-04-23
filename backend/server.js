@@ -14,7 +14,13 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 console.log('Downloads directory:', downloadsDir);
-app.use(cors());
+// Configure CORS with specific origin
+app.use(cors({
+    origin: ['https://instagram-image-downloader-in-png.vercel.app', 'http://localhost:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true
+}));
+
 app.use(express.json());
 
 // Simple GET route to check server status

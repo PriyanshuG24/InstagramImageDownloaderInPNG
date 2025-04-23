@@ -25,7 +25,7 @@ function App() {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/download', {
+      const response = await axios.post('https://instagramimagedownloaderinpng-1.onrender.com/download', {
         imageUrl: url
       });
 
