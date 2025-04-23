@@ -5,6 +5,13 @@ const sharp = require('sharp');
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+// Custom axios instance with default config
+const axiosInstance = axios.create({
+    timeout: 15000,
+    maxRedirects: 5,
+    validateStatus: status => status < 500, // Don't reject if status < 500
+});
 // Configure CORS with specific origin
 app.use(cors({
     origin: ['https://instagram-image-downloader-in-png.vercel.app', 'http://localhost:3000'],
@@ -34,19 +41,43 @@ app.post('/download', async (req, res) => {
             return res.status(400).json({ error: 'Image URL is required' });
         }
 
-        // Download the image with proper headers
-        const response = await axios({
-            url: imageUrl,
-            responseType: 'arraybuffer',
+        console.log('Attempting to download image from:', imageUrl);
+
+        // First try to get headers to check content type
+        const headResponse = await axiosInstance.head(imageUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
                 'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Referer': 'https://www.instagram.com/',
-                'Connection': 'keep-alive'
-            },
-            maxRedirects: 5,
-            timeout: 10000
+                'sec-fetch-dest': 'image',
+                'sec-fetch-mode': 'no-cors',
+                'sec-fetch-site': 'cross-site',
+                'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"'
+            }
+        });
+
+        console.log('Head response headers:', headResponse.headers);
+
+        // Download the image
+        const response = await axiosInstance({
+            url: imageUrl,
+            method: 'GET',
+            responseType: 'arraybuffer',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Referer': 'https://www.instagram.com/',
+                'sec-fetch-dest': 'image',
+                'sec-fetch-mode': 'no-cors',
+                'sec-fetch-site': 'cross-site',
+                'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"'
+            }
         });
 
         // Convert the image to PNG
@@ -61,25 +92,35 @@ app.post('/download', async (req, res) => {
         // Send the PNG buffer directly to the client
         res.send(pngBuffer);
     } catch (error) {
-        console.error('Error downloading image:', error);
+        console.error('Error details:', {
+            message: error.message,
+            status: error.response?.status,
+            headers: error.response?.headers,
+            data: error.response?.data
+        });
+
         let errorMessage = 'Failed to download image';
         let statusCode = 500;
 
         if (error.response) {
-            // The request was made and the server responded with a status code
             statusCode = error.response.status;
-            errorMessage = `Server responded with status ${error.response.status}: ${error.message}`;
+            errorMessage = `Server responded with status ${error.response.status}`;
+            if (error.response.headers['content-type']) {
+                errorMessage += `. Content-Type: ${error.response.headers['content-type']}`;
+            }
         } else if (error.request) {
-            // The request was made but no response was received
             errorMessage = 'No response received from image server';
         } else {
-            // Something happened in setting up the request
             errorMessage = error.message;
         }
 
         res.status(statusCode).json({
             error: errorMessage,
-            details: error.message
+            details: {
+                message: error.message,
+                status: error.response?.status,
+                contentType: error.response?.headers?.['content-type']
+            }
         });
     }
 });
