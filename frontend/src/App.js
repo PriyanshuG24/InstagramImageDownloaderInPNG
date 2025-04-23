@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Container, 
-  TextField, 
-  Button, 
-  Box, 
-  Typography, 
+import {
+  Container,
+  TextField,
+  Button,
+  Box,
+  Typography,
   Paper,
   Snackbar,
   Alert
@@ -25,14 +25,14 @@ function App() {
     }
 
     try {
-      const response = await axios.post('https://instagramimagedownloaderinpng-1.onrender.com/download', 
-        { imageUrl: url },
+      const response = await axios.post('http://localhost:5000/download', 
+        { imageUrl: url }, 
         { responseType: 'blob' }
       );
 
-      // Create a URL for the blob
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-      
+      // Create a URL for the blob returned from the server
+      const blobUrl = window.URL.createObjectURL(response.data);
+
       // Create a temporary link element
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -50,47 +50,33 @@ function App() {
       setUrl('');
     } catch (error) {
       console.error('Download error:', error);
-      let errorMessage = 'Error downloading image';
-      
-      if (error.response && error.response.data) {
-        errorMessage = error.response.data.error || error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      setMessage({ 
-        text: errorMessage,
-        type: 'error' 
-      });
+      setMessage({ text: 'Error downloading image', type: 'error' });
     }
     setOpen(true);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const handleClose = () => setOpen(false);
 
   return (
     <Container maxWidth="sm">
       <Box sx={{ mt: 8, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center">
+          <Typography variant="h4" align="center" gutterBottom>
             Instagram Image Downloader
           </Typography>
-          
-          <Typography variant="body1" gutterBottom align="center" sx={{ mb: 4 }}>
-            Enter an Instagram post URL or direct image URL to download
+          <Typography variant="body1" align="center" gutterBottom sx={{ mb: 4 }}>
+            Enter a direct image URL from Instagram to download it as PNG
           </Typography>
 
           <Box component="form" noValidate sx={{ mt: 2 }}>
             <TextField
               fullWidth
-              label="Enter URL"
+              label="Enter Image URL"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               margin="normal"
               variant="outlined"
-              placeholder="https://instagram.com/p/..."
+              placeholder="https://instagram.fl.../t51.2885-15/..."
             />
 
             <Button
@@ -101,7 +87,7 @@ function App() {
               sx={{ mt: 3, mb: 2 }}
               startIcon={<CloudDownloadIcon />}
             >
-              Download Image
+              Download as PNG
             </Button>
           </Box>
         </Paper>
