@@ -25,16 +25,29 @@ function App() {
     }
 
     try {
-      const response = await axios.post('https://instagramimagedownloaderinpng-1.onrender.com/download', {
-        imageUrl: url
-      });
+      const response = await axios.post('https://instagramimagedownloaderinpng-1.onrender.com/download', 
+        { imageUrl: url },
+        { responseType: 'blob' }
+      );
 
-      if (response.data.success) {
-        setMessage({ text: 'Image downloaded successfully!', type: 'success' });
-        setUrl('');
-      } else {
-        setMessage({ text: 'Failed to download image', type: 'error' });
-      }
+      // Create a URL for the blob
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `instagram_image_${Date.now()}.png`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      setMessage({ text: 'Image downloaded successfully!', type: 'success' });
+      setUrl('');
     } catch (error) {
       setMessage({ 
         text: error.response?.data?.message || 'Error downloading image', 

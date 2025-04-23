@@ -2,18 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const sharp = require('sharp');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 5000;
-
-// Create and use a downloads directory in the project
-const downloadsDir = path.join(__dirname, 'downloads');
-if (!fs.existsSync(downloadsDir)) {
-    fs.mkdirSync(downloadsDir);
-}
-console.log('Downloads directory:', downloadsDir);
 // Configure CORS with specific origin
 app.use(cors({
     origin: ['https://instagram-image-downloader-in-png.vercel.app', 'http://localhost:3000'],
@@ -49,20 +40,17 @@ app.post('/download', async (req, res) => {
             responseType: 'arraybuffer'
         });
 
-        // Generate a unique filename
-        const filename = `image_${Date.now()}.png`;
-        const filepath = path.join(downloadsDir, filename);
-
-        // Convert and save the image as PNG
-        await sharp(response.data)
+        // Convert the image to PNG
+        const pngBuffer = await sharp(response.data)
             .png()
-            .toFile(filepath);
+            .toBuffer();
 
-        res.json({
-            success: true,
-            message: 'Image downloaded successfully',
-            filename
-        });
+        // Set headers for file download
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', `attachment; filename=image_${Date.now()}.png`);
+        
+        // Send the PNG buffer directly to the client
+        res.send(pngBuffer);
     } catch (error) {
         console.error('Error downloading image:', error);
         res.status(500).json({
