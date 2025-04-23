@@ -6,11 +6,14 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
-// Get user's Downloads folder path
-const downloadsDir = path.join(process.env.USERPROFILE, 'Downloads');
-
+// Create and use a downloads directory in the project
+const downloadsDir = path.join(__dirname, 'downloads');
+if (!fs.existsSync(downloadsDir)) {
+    fs.mkdirSync(downloadsDir);
+}
+console.log('Downloads directory:', downloadsDir);
 app.use(cors());
 app.use(express.json());
 
