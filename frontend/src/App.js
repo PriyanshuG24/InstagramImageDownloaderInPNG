@@ -49,8 +49,17 @@ function App() {
       setMessage({ text: 'Image downloaded successfully!', type: 'success' });
       setUrl('');
     } catch (error) {
+      console.error('Download error:', error);
+      let errorMessage = 'Error downloading image';
+      
+      if (error.response && error.response.data) {
+        errorMessage = error.response.data.error || error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       setMessage({ 
-        text: error.response?.data?.message || 'Error downloading image', 
+        text: errorMessage,
         type: 'error' 
       });
     }
